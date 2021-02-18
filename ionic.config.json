@@ -1,0 +1,7 @@
+{
+  "name": "u-music",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue"
+}
