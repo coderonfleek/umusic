@@ -25,17 +25,17 @@
         </div>
 
         <div class="song-timeline">
-          <ion-range value="20"></ion-range>
+          <ion-range v-model="songTimelineCurrentValue" :max="songTimelineMaxValue" @ionChange="updateSongCurrentPosition()" ref="timeline"></ion-range>
 
           <div class="song-timeline-minutes">
             <ion-grid>
               <ion-row>
                 <ion-col size="2" class="song-timer">
-                  1:23
+                  {{songCurrentTime}}
                 </ion-col>
                 
                 <ion-col size="2" offset="8" class="song-timer ion-text-end">
-                  2:34
+                  {{songDuration}}
                 </ion-col>
               </ion-row>
             </ion-grid>
@@ -50,7 +50,8 @@
               </ion-col>
 
               <ion-col size="8" class="ion-text-center">
-                <ion-icon :icon="playCircle" class="play-button" />
+                <ion-icon v-if="playing" :icon="pauseCircle" class="play-button" @click="play()" />
+                <ion-icon v-else :icon="playCircle" class="play-button" @click="play()" />
               </ion-col>
               
               <ion-col size="2" class="ion-text-start">
@@ -58,6 +59,8 @@
               </ion-col>
             </ion-row>
           </ion-grid>
+          
+          <audio ref="audio" src="assets/Ara.mp3"></audio>
         </div>
        
       </div>
@@ -69,16 +72,95 @@
 <script>
 import { IonPage, IonHeader, IonToolbar, IonTitle, IonContent, IonRange, IonGrid, IonCol, IonRow, IonIcon } from '@ionic/vue';
 import Toolbar from '@/components/Toolbar.vue';
-import { playSkipBack, playSkipForward, playCircle } from 'ionicons/icons';
+import { playSkipBack, playSkipForward, playCircle, pauseCircle } from 'ionicons/icons';
+
 
 export default  {
   name: 'Player',
   components: { Toolbar, IonHeader, IonToolbar, IonTitle, IonContent, IonPage, IonRange, IonGrid, IonCol, IonRow, IonIcon  },
+  data(){
+    return {
+      playing: false,
+      songTimelineCurrentValue: 0,
+      songTimelineMaxValue : 100,
+      songCurrentTime: "0:00",
+      songDuration: "0:00"
+    }
+  },
+  created(){
+    console.log(this.$refs);
+
+    setInterval(this.updatesongTimelineCurrentValue, 500)
+  },
   setup() {
     return {
       playSkipBack,
       playSkipForward,
-      playCircle
+      playCircle,
+      pauseCircle
+    }
+  },
+  watch : {
+    songTimelineCurrentValue: function (val) {
+      if(val == this.songTimelineMaxValue){
+        this.playing = false
+      }
+    }
+  },
+  methods : {
+    play(){
+      console.log(this.$refs.audio)
+      let song = this.$refs.audio;
+
+      this.songDuration = this.formatSongTime(song.duration);
+      if(this.playing){
+        this.playing = false;
+        song.pause()
+      }else{
+        this.playing = true;
+        song.play()
+      }
+      
+    },
+
+    updatesongTimelineCurrentValue(){
+      let song = this.$refs.audio;
+      let timeline = this.$refs.timeline;
+
+      if(song && timeline){
+        /* console.log(song.duration);
+        console.log(song.currentTime); */
+        //timeline.max = song.duration;
+        this.songTimelineMaxValue = song.duration;
+        this.songTimelineCurrentValue = song.currentTime;
+        this.songCurrentTime = this.formatSongTime(song.currentTime);
+
+        
+      }
+      
+    },
+
+    updateSongCurrentPosition(){
+      let song = this.$refs.audio;
+      
+      /* console.log(this.songTimelineCurrentValue)
+      console.log(song.currentTime) */
+      let timeDiff = this.songTimelineCurrentValue - song.currentTime;
+      if(Math.abs(timeDiff) >= 1){
+        console.log("Changed song position")
+        song.currentTime = this.songTimelineCurrentValue;
+      }
+      
+    },
+    formatSongTime(seconds){
+      let min = Math.floor((seconds/60));
+      let sec = Math.floor(seconds - (min *60));
+
+      if(sec < 10){
+        sec = `0${sec}`;
+      }
+
+      return `${min}:${sec}`;
     }
   }
 }
